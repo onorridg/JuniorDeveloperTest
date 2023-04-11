@@ -62,6 +62,7 @@ func decodeWindows1251(xmlData io.Reader) *ValCurs {
 }
 
 func getDalyExchangeRates(date string) *ValCurs {
+	time.Sleep(50 * time.Millisecond)
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
 	defer cancel()
 
@@ -160,3 +161,4 @@ func main() {
 	}
 	t.Render()
 }
+
