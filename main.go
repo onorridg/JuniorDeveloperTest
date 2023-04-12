@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/xml"
 	"fmt"
-	"github.com/jedib0t/go-pretty/v6/table"
 	"io"
 	"net/http"
 	"os"
@@ -12,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jedib0t/go-pretty/v6/table"
 	"golang.org/x/text/encoding/charmap"
 )
 
@@ -74,6 +74,7 @@ func getDalyExchangeRates(date string) *ValCurs {
 	if err != nil {
 		panic(err)
 	}
+	defer resp.Body.Close()
 
 	dalyExchangeRates := decodeWindows1251(resp.Body)
 	return dalyExchangeRates
@@ -98,7 +99,8 @@ func getTimeInterval() (time.Time, time.Time) {
 func setCurrencyDalyData(start time.Time, dataNinetyDays map[string]*Currency) map[string]*Currency {
 	dalyExchangeRates := getDalyExchangeRates(start.Format("02/01/2006"))
 	for _, currency := range dalyExchangeRates.Valute {
-		value := stringToFloat64(currency.Value)
+		nominal := stringToFloat64(currency.Nominal)
+		value := stringToFloat64(currency.Value) / nominal
 		curr, exist := dataNinetyDays[currency.CharCode]
 		if !exist {
 			newCurrency := Currency{Min: value, Max: value,
@@ -147,18 +149,17 @@ func main() {
 				{count, key,
 					fmt.Sprint(value.Min, " (", value.MinDate, ")"),
 					fmt.Sprint(value.Max, " (", value.MaxDate, ")"),
-					fmt.Sprint(value.Sum / float64(90))}})
+					fmt.Sprint(value.Sum / float64(period))}})
 			t.AppendSeparator()
 		} else {
 			t.AppendFooter(table.Row{
 				count, key,
 				fmt.Sprint(value.Min, " (", value.MinDate, ")"),
 				fmt.Sprint(value.Max, " (", value.MaxDate, ")"),
-				fmt.Sprint(value.Sum / float64(90)),
+				fmt.Sprint(value.Sum / float64(period)),
 			})
 		}
 		count += 1
 	}
 	t.Render()
 }
-
